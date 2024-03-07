@@ -1,0 +1,158 @@
+-- (system)
+ALTER SESSION SET "_oracle_script" = TRUE;
+
+
+-- Задание №1
+-- (system)
+SELECT * FROM DBA_TABLESPACES;
+
+
+-- Задание №2
+-- (system)
+CREATE TABLESPACE TNA_QDATA
+DATAFILE 'D:\Study\DB\lab05\TNA_QDATA.dbf'
+    SIZE 10m
+OFFLINE
+;
+
+ALTER TABLESPACE TNA_QDATA ONLINE;
+
+CREATE USER TNA
+IDENTIFIED BY Pa$$w0rd
+DEFAULT TABLESPACE TNA_QDATA
+;
+
+GRANT
+    CREATE SESSION,
+    CREATE TABLE
+TO TNA;
+
+ALTER USER TNA
+QUOTA 2m ON TNA_QDATA
+;
+
+-- (TNA)
+CREATE TABLE TNA_T1 (
+    ID int,
+    DATA varchar2(30),
+    
+    CONSTRAINT TNA_T1_PK PRIMARY KEY (ID)
+);
+
+INSERT INTO TNA_T1(ID, DATA) VALUES (1, 'some data 1');
+INSERT INTO TNA_T1(ID, DATA) VALUES (2, 'some data 2');
+INSERT INTO TNA_T1(ID, DATA) VALUES (3, 'some data 3');
+
+SELECT * FROM TNA_T1;
+
+
+-- Задание №3
+-- (system)
+SELECT * FROM DBA_SEGMENTS WHERE TABLESPACE_NAME = 'TNA_QDATA';
+
+
+-- Задание №4
+-- (system)
+SELECT * FROM DBA_SEGMENTS WHERE SEGMENT_NAME = 'TNA_T1';
+
+
+-- Задание №5
+-- (system)
+SELECT * FROM DBA_SEGMENTS;
+-- (TNA)
+SELECT * FROM USER_SEGMENTS;
+
+
+-- Задание №6
+-- (TNA)
+DROP TABLE TNA_T1;
+
+
+-- Задание №7
+-- (system)
+SELECT * FROM DBA_SEGMENTS WHERE TABLESPACE_NAME = 'TNA_QDATA';
+-- (TNA)
+SELECT * FROM USER_RECYCLEBIN;
+
+
+-- Задание №8
+-- (TNA)
+FLASHBACK TABLE TNA_T1 TO BEFORE DROP;
+SELECT * FROM TNA_T1;
+
+
+-- Задание №9
+-- (TNA)
+DELETE FROM TNA_T1 WHERE ID > 3;
+
+BEGIN
+    FOR i IN 1..10000
+    LOOP
+        INSERT INTO TNA_T1 VALUES ((10 + i), CONCAT('some data ', TO_CHAR((10 + i))));
+    END LOOP;
+END;
+
+SELECT * FROM TNA_T1 ORDER BY ID;
+
+
+-- Задание №10
+-- (TNA)
+SELECT 
+    SEGMENT_NAME,
+    EXTENT_ID,
+    BLOCKS,
+    BYTES
+FROM 
+    USER_EXTENTS 
+WHERE
+    SEGMENT_NAME = 'TNA_T1'
+;
+
+
+-- Задание №11
+-- (system)
+SELECT * FROM DBA_EXTENTS;
+
+
+-- Задание №12
+-- (TNA)
+SELECT ID, ROWID FROM TNA_T1;
+
+-- (system)
+SELECT ROWID FROM HELP;
+
+
+-- Задание №13
+-- (TNA)
+SELECT ID, ROWID, ORA_ROWSCN FROM TNA_T1;
+
+
+-- Задание №14
+-- (TNA)
+DELETE FROM TNA_T1;
+
+DROP TABLE TNA_T1;
+
+CREATE TABLE TNA_T1 (
+    ID int,
+    DATA varchar2(30),
+    
+    CONSTRAINT TNA_T1_PK PRIMARY KEY (ID)
+) ROWDEPENDENCIES;
+
+BEGIN
+    FOR i IN 1..20
+    LOOP
+        INSERT INTO TNA_T1 VALUES (i, CONCAT('some data ', TO_CHAR(i)));
+        COMMIT;
+    END LOOP;
+END;
+
+SELECT ID, ROWID, ORA_ROWSCN FROM TNA_T1;
+
+
+-- Задание №15 - 16
+-- (system)
+DROP USER TNA CASCADE;
+DROP TABLESPACE TNA_QDATA;
+
